@@ -1,0 +1,11 @@
+{
+  "features": [
+    "name_sim",
+    "street_sim",
+    "zip_eq",
+    "city_eq",
+    "email_user_eq",
+    "phone_last4_eq"
+  ],
+  "threshold": 0.7332955615590503
+}

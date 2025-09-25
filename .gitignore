@@ -1,0 +1,37 @@
+# --- Python / build / IDE ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.build/
+dist/
+build/
+.eggs/
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+.pytest_cache/
+.coverage
+coverage.xml
+.mypy_cache/
+.ipynb_checkpoints/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- Project outputs ---
+out/**
+!out/.gitkeep        # оставим «пустую» папку в репо
+
+# --- Data / models (оставляем только легкие примеры) ---
+data/*.joblib        # бинарные модели
+data/raw*.csv        # сырые/тяжелые (если появятся)
+
+!data/clear_data.csv
+!data/pair_model_meta.json
+
