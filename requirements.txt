@@ -1,0 +1,15 @@
+pandas 
+re 
+itertool 
+typing 
+random 
+faker 
+numpy 
+matplotlib
+rapidfuzz
+sklearn
+hashlib
+collections
+joblib
+pathlib 
+json
