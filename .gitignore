@@ -24,14 +24,5 @@ coverage.xml
 Thumbs.db
 *.log
 
-# --- Project outputs ---
-out/**
-!out/.gitkeep        # оставим «пустую» папку в репо
 
-# --- Data / models (оставляем только легкие примеры) ---
-data/*.joblib        # бинарные модели
-data/raw*.csv        # сырые/тяжелые (если появятся)
-
-!data/clear_data.csv
-!data/pair_model_meta.json
 

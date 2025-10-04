@@ -50,10 +50,6 @@ def load_candidates() -> list[tuple[int, int]]:
 
 # --------- Matching ---------
 
-# def predict_with_model(df: pd.DataFrame,
-#                        pairs: list[tuple[int, int]],
-#                        model_path: Path,
-#                        meta_path: Path) -> set[tuple[int, int]]:
 def predict_with_model(df: pd.DataFrame,
                        pairs: list[tuple[int, int]],
                        model_path: Path,
