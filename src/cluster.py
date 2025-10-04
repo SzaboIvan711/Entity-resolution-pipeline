@@ -6,15 +6,31 @@ from rapidfuzz.distance import JaroWinkler
 from rapidfuzz import fuzz
 
 def build_clusters(pairs, index):
+    """
+    Build connected components (clusters) from a set of pairwise links.
+
+    Args:
+        pairs: Iterable of (i, j) edges indicating that records i and j are linked.
+        index: Iterable of all node indices to ensure isolated nodes become singleton clusters.
+
+    Returns:
+        List of clusters, where each cluster is a sorted list of indices.
+    """
     adj = defaultdict(set)
-    for i,j in pairs:
+    for i, j in pairs:
         adj[i].add(j); adj[j].add(i)
-    visited=set(); clusters=[]
+
+    visited = set()
+    clusters = []
     for v in index:
-        if v in visited: continue
-        comp=[]; q=deque([v]); visited.add(v)
+        if v in visited:
+            continue
+        comp = []
+        q = deque([v])
+        visited.add(v)
         while q:
-            u=q.popleft(); comp.append(u)
+            u = q.popleft()
+            comp.append(u)
             for w in adj[u]:
                 if w not in visited:
                     visited.add(w); q.append(w)
@@ -24,6 +40,17 @@ def build_clusters(pairs, index):
 # cluster.py
 
 def summarize_clusters(df, clusters, uid_col='uid'):
+    """
+    Summarize basic statistics for each cluster (size, UID distribution).
+
+    Args:
+        df: Source DataFrame.
+        clusters: List of clusters (each a list of row indices).
+        uid_col: Optional column with unique IDs to assess homogeneity.
+
+    Returns:
+        DataFrame with one row per cluster and summary metrics.
+    """
     rows = []
     has_uid = uid_col in df.columns
     for cid, idxs in enumerate(clusters):
@@ -45,17 +72,28 @@ def summarize_clusters(df, clusters, uid_col='uid'):
     return pd.DataFrame(rows).sort_values(['size'], ascending=False)
 
 def show_cluster(df, clusters, cid, cols=None, uid_col='uid'):
+    """
+    Return a view of a specific cluster, optionally limited to selected columns.
+    """
     idxs = clusters[cid]
     sub = df.loc[idxs].copy()
-    # сортировку по uid делаем только если он есть
+    # Sort by uid only if the column exists
     if uid_col in sub.columns:
         sub = sub.sort_values(uid_col)
     return sub[cols] if cols else sub
 
 def cluster_cohesion(df, idxs):
+    """
+    Compute simple cohesion metrics within a cluster:
+    - Minimum Jaro-Winkler similarity over normalized names.
+    - Minimum token-set ratio over normalized streets.
+
+    Returns:
+        Dict with 'name_min' and 'street_min'.
+    """
     name_min, street_min = 1.0, 100.0
-    for i,j in combinations(idxs,2):
-        a,b = df.loc[i], df.loc[j]
+    for i, j in combinations(idxs, 2):
+        a, b = df.loc[i], df.loc[j]
         name_min = min(name_min, JaroWinkler.normalized_similarity(a['Name_norm'], b['Name_norm']))
         street_min = min(street_min, fuzz.token_set_ratio(a['Street_norm'], b['Street_norm']))
     return {'name_min': name_min, 'street_min': street_min}

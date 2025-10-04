@@ -5,12 +5,12 @@ from rapidfuzz.distance import JaroWinkler
 from rapidfuzz import fuzz
 import pandas as pd
 
-# 1) Параметры (порогов можно не менять, передавать в функции)
+# 1) Parameters (you can override thresholds via function args if needed)
 NAME_THR   = 0.92
 STREET_THR = 88
 HARD_NAME  = 0.95
 
-# вспомогательная подготовка полей (если не сделали раньше)
+# Helper to prepare auxiliary fields (in case this wasn't done earlier)
 def prepare_aux_cols(df: pd.DataFrame) -> pd.DataFrame:
     if 'email_user' not in df:
         df['email_user'] = df['Email_norm'].str.split('@').str[0]
@@ -18,7 +18,7 @@ def prepare_aux_cols(df: pd.DataFrame) -> pd.DataFrame:
         df['phone_last4'] = df['Phone_norm'].astype(str).str[-4:]
     return df
 
-# 2) Признаки пары
+# 2) Pairwise features
 def pair_features(df: pd.DataFrame, i: int, j: int) -> Dict[str, float]:
     a, b = df.loc[i], df.loc[j]
     return {
@@ -32,7 +32,7 @@ def pair_features(df: pd.DataFrame, i: int, j: int) -> Dict[str, float]:
         'phone_last4_eq': a['phone_last4'] == b['phone_last4'],
     }
 
-# 3) Правила
+# 3) Rule-based matcher
 def is_match(df: pd.DataFrame, i: int, j: int,
              name_thr: float = NAME_THR,
              street_thr: float = STREET_THR,
@@ -48,23 +48,21 @@ def is_match(df: pd.DataFrame, i: int, j: int,
         return True
     if f['phone_last4_eq'] and f['name_sim'] >= hard_name and (f['zip_eq'] or f['city_eq']):
         return True
-    # в rules.is_match, перед return False:
-    # страхующее правило под редкие опечатки в name+street
+    # Safety rule for rare typos in name+street just before returning False
     if (f['zip_eq'] and f['city_eq']) and \
-    (f['name_sim'] >= 0.88 and f['street_sim'] >= 82) and \
-    (f['phone_last4_eq'] or f['email_user_eq']):
-       return True
-
+       (f['name_sim'] >= 0.88 and f['street_sim'] >= 82) and \
+       (f['phone_last4_eq'] or f['email_user_eq']):
+        return True
 
     return False
 
-# --- утилиты для оценки ---
+# --- Utilities for evaluation ---
 def true_pairs(df: pd.DataFrame, uid_col: str = 'uid') -> Set[Tuple[int,int]]:
-    S=set()
+    S = set()
     for _, g in df.groupby(uid_col).groups.items():
-        g=list(g)
-        for i,j in combinations(sorted(g),2):
-            S.add((i,j))
+        g = list(g)
+        for i, j in combinations(sorted(g), 2):
+            S.add((i, j))
     return S
 
 def predict_pairs(df: pd.DataFrame, cand_pairs: Iterable[Tuple[int,int]],

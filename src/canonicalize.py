@@ -4,12 +4,12 @@ from typing import Callable, Dict, Iterable, List, Sequence
 import hashlib
 import pandas as pd
 
-# --- 1) стабильный entity_id (не зависит от порядка строк) ---
+# --- 1) Stable entity_id (independent of row order) ---
 def stable_entity_id(idxs: Sequence[int], prefix: str = "ent_") -> str:
     key = "|".join(map(str, sorted(map(int, idxs))))
     return prefix + hashlib.sha1(key.encode()).hexdigest()[:12]
 
-# --- 2) стратегии выбора канонического значения ---
+# --- 2) Strategies for choosing a canonical value ---
 def majority(s: pd.Series):
     vc = s.dropna().value_counts()
     return vc.index[0] if len(vc) else None
@@ -19,10 +19,10 @@ def longest(s: pd.Series):
     return max(s, key=len) if len(s) else None
 
 def most_frequent_valid(s: pd.Series):
-    # сейчас = majority; сюда легко добавить валидации email/phone
+    # Currently identical to majority; validation for email/phone can be added here later
     return majority(s)
 
-# --- 3) каноникализация одного кластера ---
+# --- 3) Canonicalization of a single cluster ---
 def canonicalize_cluster(df: pd.DataFrame, idxs: List[int],
                          rules: Dict[str, Callable[[pd.Series], object]]) -> dict:
     d = df.loc[idxs]
@@ -33,12 +33,12 @@ def canonicalize_cluster(df: pd.DataFrame, idxs: List[int],
         "support_size": len(idxs),
     }
 
-    # основные поля по правилам
+    # Core fields resolved according to provided rules
     for col, fn in rules.items():
         if col in d:
             out[col] = fn(d[col])
 
-    # полезные метаданные/агрегаты
+    # Useful metadata/aggregates
     if "Name_norm" in d:
         vc = d["Name_norm"].dropna().value_counts()
         out["name_share"] = (vc.iloc[0] / len(d)) if len(vc) else None
@@ -49,10 +49,10 @@ def canonicalize_cluster(df: pd.DataFrame, idxs: List[int],
 
     return out
 
-# --- 4) каноникализация всех кластеров ---
+# --- 4) Canonicalization over all clusters ---
 def canonicalize_all(df: pd.DataFrame, clusters: List[List[int]],
                      rules: Dict[str, Callable[[pd.Series], object]]):
-    # mapping: row_id -> entity_id
+    # Mapping: row_id -> entity_id
     eid_map = {}
     for idxs in clusters:
         eid = stable_entity_id(idxs)
@@ -62,7 +62,7 @@ def canonicalize_all(df: pd.DataFrame, clusters: List[List[int]],
     df_with_eid = df.copy()
     df_with_eid["entity_id"] = df_with_eid.index.map(eid_map)
 
-    # таблица сущностей
+    # Build the entity table
     rows = [canonicalize_cluster(df, idxs, rules) for idxs in clusters]
     entities = (pd.DataFrame(rows)
                   .sort_values(["support_size","entity_id"], ascending=[False, True])
